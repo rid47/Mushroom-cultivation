@@ -1,3 +1,7 @@
+/* link_I_followed: http://www.circuitbasics.com/how-to-set-up-the-dht11-humidity-sensor-on-an-arduino/
+
+
+
 #include <dht.h>
 
 dht DHT;
