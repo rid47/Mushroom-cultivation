@@ -1,0 +1,58 @@
+/* http://www.instructables.com/id/Measuring-Light-Using-Light-Sensor/ */
+
+
+#include "math.h"
+
+int LDR = 5; // select the input pin for the LDR
+
+void setup() {
+
+Serial.begin(9600);
+
+pinMode(LDR, INPUT); // declare the LDR as an INPUT
+
+}
+
+void loop()
+
+{
+
+int vout1 = analogRead(A5); // Read the analogue pin
+
+float vout = vout1/204.6;
+
+Serial.print(vout1);
+
+Serial.print("DU");
+
+Serial.print(vout);
+
+Serial.println(" vout");
+
+float R = (11000-vout*2200)/vout; // calculate the resistance
+
+//float R = pow( X, -1);
+
+Serial.print(R); // light dependant resistance
+
+Serial.println(" Resistance.");
+
+float lux= (pow( R, (1/-0.8616)))/(pow( 10, (5.118/-0.8616))); //lux calculation
+
+Serial.print(lux);
+
+Serial.print(" Lux.");
+
+Serial.println("");
+
+delay(3000); //delay for a second
+
+//lux2
+
+float lux2 = 65.9 * (pow( vout1, 0.352));
+
+Serial.print(lux2);
+
+Serial.print(" lux form2\n");
+
+}
