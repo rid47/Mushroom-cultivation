@@ -1,0 +1,23 @@
+#define  light_sensor 25
+int sensorValue = 0;      
+
+
+void setup() {
+ 
+  Serial.begin(9600);
+  pinMode(light_sensor, INPUT);
+ 
+}
+
+void loop() {
+
+  light_intensity();
+
+}
+
+void light_intensity(){
+  sensorValue = analogRead(light_sensor);
+  Serial.println(sensorValue);
+  delay(500);
+
+}
