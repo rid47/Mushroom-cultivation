@@ -3,9 +3,9 @@
 #include "DHT.h"        // including the library of DHT11 temperature and humidity sensor
 #define DHTTYPE DHT11   // DHT 11
 
-#define light_sensor 25
+#define light_sensor 34
 #define dht_dpin 26
-#define co2_sensor 27 
+#define co2_sensor 35 
 
 
 
@@ -13,8 +13,8 @@
 // Update these with values suitable for your network.
 const char* ssid = "DataSoft_WiFi";
 const char* password = "support123";
-const char* mqtt_server = "broker.mqttdashboard.com";
-//const char* mqtt_server = "iot.eclipse.org";
+//const char* mqtt_server = "broker.hivemq.com";
+const char* mqtt_server = "iot.eclipse.org";
 
 
 WiFiClient espClient;
@@ -28,6 +28,7 @@ DHT dht(dht_dpin, DHTTYPE);
 
 
 // Definig variables
+
 int data1=0;
 int data2=0;
 int data3=0;
@@ -37,11 +38,16 @@ long lastMsg = 0;
 
 void setup()
 { 
+
+  pinMode(light_sensor,INPUT);
+  pinMode(dht_dpin,INPUT);
+  pinMode(co2_sensor,INPUT);
+  
   dht.begin();
   
   
   setup_wifi();
-  client.setServer(mqtt_server, 8000);
+  client.setServer(mqtt_server, 1883);
   Serial.begin(9600);
   
   //delay(700);
@@ -63,14 +69,15 @@ void loop() {
   data1=temp();
   data2=hum();
   data3=co2();
-  data4=light();
+  data4=analogRead(light_sensor);
 
   String msg=""; 
   msg= msg+ data1+","+data2+","+data3+","+data4;
   char message[68];
   msg.toCharArray(message,68);
-  Serial.println(message);
-  client.publish("mushroom/sensor_data",message);
+ //Serial.println(msg);
+ Serial.println(message);
+ client.publish("mushroom/sensor_data",message);
 
   }
   }
@@ -105,12 +112,12 @@ void reconnect() {
   {
     Serial.print("Attempting MQTT connection...");
     // Create a random client ID
-    //String clientId = "clientId-";
-    //clientId += "FGSVmOq0Ek";
+    String clientId = "ESP32-";
+    clientId += String(random(0xffff), HEX);
     // Attempt to connect
     //if your MQTT broker has clientID,username and password
     //please change following line to    if (client.connect(clientId,userName,passWord))
-    if (client.connect("FGSVmOq0Ek","ridwan","1234"))
+    if (client.connect(clientId.c_str()))
     {
       Serial.println("connected");
      //once connected to MQTT broker, subscribe command if any
@@ -135,7 +142,7 @@ int temp()
     
     int t = dht.readTemperature();         
     
-    /*Serial.print("temperature = ");
+   /* Serial.print("temperature = ");
     Serial.print(t); 
     Serial.println("C  ");*/
     delay(500);
@@ -156,31 +163,31 @@ int hum()
 
 int co2(){
 
-long co2now[10];//long array for co2 readings
-long co2raw=0;  //long for raw value of co2
-long co2comp = 0;   //long for compensated co2 
-long co2ppm = 0;    //long for calculated ppm
-long sum=0;
+int co2now[10];//long array for co2 readings
+int co2raw=0;  //long for raw value of co2
+int co2comp = 0;   //long for compensated co2 
+int co2ppm = 0;    //long for calculated ppm
+int sum=0;
 //Serial.printlnln(analogRead(anInput));
 for (int x=0;x<10;x++){
 
 co2now[x]=analogRead(co2_sensor);
-delay(500);
+delay(200);
 sum=sum+co2now[x];
 }
 co2raw=sum/10;
 co2ppm=map(co2raw,0,1023,400,5000);
 //Serial.println(co2ppm); 
-delay(500);
+//delay(500);
 return co2ppm; 
   
 }
 
-
+/*
 int light(){
   
-  int l = analogRead(light_sensor);
-  //Serial.println(l);
+  l = analogRead(light_sensor);
+  Serial.println(l);
   delay(500);
   return(l);
-}
+}*/
