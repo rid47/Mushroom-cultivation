@@ -1,0 +1,129 @@
+#include "WiFi.h"
+#include <PubSubClient.h>
+
+
+
+#define ACpin 12
+#define Pumppin 13
+#define Fanpin 14
+
+
+char data[58];
+//String t;
+
+// Update these with values suitable for your network.
+const char* ssid = "DataSoft_WiFi";
+const char* password = "support123";
+//const char* mqtt_server = "broker.hivemq.com";
+const char* mqtt_server = "iot.eclipse.org";
+const int mqttPort = 1883;
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+
+//----------------------------Setup----------------------------------//
+ 
+void setup()
+{ 
+
+ 
+  Serial.begin(9600);
+  setup_wifi();
+  client.setServer(mqtt_server,mqttPort);
+  client.setCallback(callback);
+  
+  
+  //delay(700);
+
+}
+
+//-----------------------------loop---------------------------------------//
+
+void loop() {
+
+
+  if (!client.connected()) {
+    reconnect();
+  }
+  client.loop();
+  }
+  
+//-----------------------------WiFi-------------------------------------------//
+void setup_wifi() {
+    delay(100);
+  // We start by connecting to a WiFi network
+    Serial.print("Connecting to ");
+    Serial.println(ssid);
+    WiFi.begin(ssid, password);
+    while (WiFi.status() != WL_CONNECTED) 
+    {
+      delay(500);
+      Serial.print(".");
+    }
+  randomSeed(micros());
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+
+
+  
+  
+}
+
+//---------------------------While client not conncected---------------------------------//
+
+void reconnect() {
+  // Loop until we're reconnected
+  while (!client.connected()) 
+  {
+    Serial.print("Attempting MQTT connection...");
+    // Create a random client ID
+    String clientId = "ESP32-";
+    clientId += String(random(0xffff), HEX);
+    // Attempt to connect
+    //if your MQTT broker has clientID,username and password
+    //please change following line to    if (client.connect(clientId,userName,passWord))
+    if (client.connect(clientId.c_str()))
+    {
+      Serial.println("connected");
+     //once connected to MQTT broker, subscribe command if any
+      client.subscribe("mushroom/user_input");
+      Serial.println("Subsribed to topic: mushroom/user_input");
+      client.subscribe("mushroom/time");
+      Serial.println("Subsribed to topic: mushroom/time");
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      // Wait 6 seconds before retrying
+      delay(5000);
+    }
+  }
+} //end reconnect()
+
+
+
+
+//-----------------------Callback function-------------------------------------//
+
+void callback(char* topic, byte* payload, unsigned int length) {
+ 
+  Serial.print("Message arrived in topic: ");
+  Serial.println(topic);
+  if(strcmp(topic, "mushroom/time") == 0){
+  Serial.print("Message:");
+  for (int i = 0; i < length; i++) {
+    //Serial.print((char)payload[i]);
+    char data=payload[i];
+    Serial.print(data);
+    }
+
+    //t=t+data;
+    //Serial.println(t);
+    }
+    
+    
+    }
+
