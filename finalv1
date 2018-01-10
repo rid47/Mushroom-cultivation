@@ -1,3 +1,6 @@
+
+
+
 //------------------------------Including required libraries-------------------//
 
 #include "WiFi.h"
@@ -304,11 +307,11 @@ if(msg2>input2)
 
     digitalWrite(Pumppin,HIGH);
     Serial.println("Pump on");
-    client.publish("mushroom/ack","Pump on");
+    client.publish("mushroom/ack","1");
 
     digitalWrite(Fanpin,HIGH);
     Serial.println("Fan on");
-    client.publish("mushroom/ack","Fan on");
+    client.publish("mushroom/ack","2");
     delay(60000);
     
     
@@ -420,14 +423,14 @@ void callback(char* topic, byte* payload, unsigned int length) {
       }
       if (data=='2')
     {
-      digitalWrite(Pumppin,LOW);
-      Serial.print("Pump OFF");
+      digitalWrite(Pumppin,HIGH);
+      Serial.print("Pump ON");
       
       }
       if (data=='3')
     {
-      digitalWrite(Pumppin,HIGH);
-      Serial.print("Pump ON");
+      digitalWrite(Pumppin,LOW);
+      Serial.print("Pump OFF");
       
       }
       if (data=='4')
