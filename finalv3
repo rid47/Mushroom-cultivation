@@ -1,0 +1,629 @@
+
+
+
+//------------------------------Including required libraries-------------------//
+
+#include "WiFi.h"
+#include <WiFiUdp.h>
+#include <PubSubClient.h>
+#include "DHT.h"        // including the library of DHT11 temperature and humidity sensor
+#include<ESP32Ticker.h>
+
+
+//----------------------------Defining required pins and DHT type-----------//
+
+#define DHTTYPE DHT11   // DHT 11
+
+#define light_sensor 34
+#define dht_dpin 26
+#define co2_sensor 35 
+#define ACpin 12
+#define Pumppin 13
+#define Fanpin 14
+Ticker secondTick;
+
+//int watchdogCount=0;
+volatile int watchdogCount=0;
+void ISRwatchdog(){
+
+
+  watchdogCount++;
+  if(watchdogCount==100){
+
+
+    Serial.println();
+    Serial.print("The watch dog bites......");
+    ESP.restart();
+  }
+}
+
+
+
+//----------------User given time spliting variables---------------------------//
+
+const int numberOfPieces = 3;
+String t[numberOfPieces];
+String input = "";
+String input2 = "";
+
+// Keep track of current position in time array
+int counter = 0;
+
+// Keep track of the last comma so we know where to start the substring
+int lastIndex = 0;
+
+
+//-----------------------------------UDP credentials for NTP time------------------------------------------//
+
+unsigned int localPort = 2390;      // local port to listen for UDP packets
+
+/* Don't hardwire the IP address or we won't get the benefits of the pool.
+ *  Lookup the IP address for the host name instead */
+//IPAddress timeServer(129, 6, 15, 28); // time.nist.gov NTP server
+IPAddress timeServerIP; // time.nist.gov NTP server address
+//const char* ntpServerName = "time.nist.gov";
+const char* ntpServerName = "bd.pool.ntp.org";
+
+const int NTP_PACKET_SIZE = 48; // NTP time stamp is in the first 48 bytes of the message
+
+byte packetBuffer[ NTP_PACKET_SIZE]; //buffer to hold incoming and outgoing packets
+
+// A UDP instance to let us send and receive packets over UDP
+WiFiUDP udp;
+
+
+//-----------------------------------Char array to hold payload message------------------------------------//
+
+String Clock="";
+char Data[58];
+char Time[58];
+char Data2[58];
+
+
+
+//--------------------------------WiFi and MQTT credentials-----------------------------------------------//
+
+
+const char* ssid = "DataSoft_WiFi";
+const char* password = "support123";
+//const char* mqtt_server = "broker.hivemq.com";
+const char* mqtt_server = "iot.eclipse.org";
+const int mqttPort = 1883;
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+DHT dht(dht_dpin, DHTTYPE); 
+
+//---------------------------- Definig variables to store sensor data -----------------------------------//
+
+int data1=0;
+int data2=0;
+int data3=0;
+int data4=0;
+long lastMsg = 0;
+
+
+//------------------------------Set up function--------------------------------------------------------//
+
+
+void setup()
+{ 
+
+  pinMode(ACpin,OUTPUT);
+  pinMode(Pumppin,OUTPUT);
+  pinMode(Fanpin,OUTPUT);
+
+  digitalWrite(ACpin,LOW);
+  digitalWrite(Pumppin,LOW);
+  digitalWrite(Fanpin,LOW);
+  
+  
+  pinMode(light_sensor,INPUT);
+  pinMode(dht_dpin,INPUT);
+  pinMode(co2_sensor,INPUT);
+  
+  Serial.begin(115200);
+  secondTick.attach(1,ISRwatchdog);
+  while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB port only
+  }
+  dht.begin();
+  setup_wifi();
+  delay(10);
+  //Serial.println("Starting UDP");
+  udp.begin(localPort);
+  client.setServer(mqtt_server,mqttPort);
+  client.setCallback(callback);
+
+}
+
+
+//---------------------------------------------loop function---------------------------------------//
+
+
+void loop() {
+
+  Serial.print("Watch dog counter:");
+  watchdogCount=0;
+  Serial.println(watchdogCount);
+  //delay(1000);
+  if (!client.connected()) {
+    reconnect();
+  }
+  client.loop();
+
+  long now=millis();
+  if(now-lastMsg>6000){
+
+  lastMsg=now;
+
+  //--------------------------Reading sensor data and publishing data to mushroom/sensor_data----//
+  
+
+  data1=temp();
+  data2=hum();
+  data3=co2();
+  data4=light();
+
+  if(data1<50){
+
+  String msg=""; 
+  msg= msg+ data2+","+data1+","+data3+","+data4;
+  char message[68];
+  msg.toCharArray(message,68);
+ //Serial.println(msg);
+ Serial.println(message);
+ client.publish("mushroom/sensor_data",message);
+  }
+
+ String msg2="";
+ msg2=msg2+data1;
+ 
+if(msg2>input2)
+ {
+  Serial.println("AC On");
+  digitalWrite(ACpin,HIGH);
+  }
+  else
+
+  {
+    Serial.println("AC off");
+    digitalWrite(ACpin,LOW);
+  }
+
+
+
+  }
+
+//---------------------Time using NTP--------------------------------------//
+
+  //get a random server from the pool
+  
+  
+  WiFi.hostByName(ntpServerName, timeServerIP); 
+  sendNTPpacket(timeServerIP); // send an NTP packet to a time server
+  // wait to see if a reply is available
+  delay(1000);
+  
+  int cb = udp.parsePacket();
+  if (!cb) {
+    Serial.println("no packet yet");
+  }
+  else {
+    Serial.print("packet received, length=");
+    Serial.println(cb);
+    // We've received a packet, read the data from it
+    udp.read(packetBuffer, NTP_PACKET_SIZE); // read the packet into the buffer
+
+    //the timestamp starts at byte 40 of the received packet and is four bytes,
+    // or two words, long. First, esxtract the two words:
+
+    unsigned long highWord = word(packetBuffer[40], packetBuffer[41]);
+    unsigned long lowWord = word(packetBuffer[42], packetBuffer[43]);
+    // combine the four bytes (two words) into a long integer
+    // this is NTP time (seconds since Jan 1 1900):
+    unsigned long secsSince1900 = highWord << 16 | lowWord;
+    Serial.print("Seconds since Jan 1 1900 = " );
+    Serial.println(secsSince1900);
+
+    // now convert NTP time into everyday time:
+    Serial.print("Unix time = ");
+    // Unix time starts on Jan 1 1970. In seconds, that's 2208988800:
+    const unsigned long seventyYears = 2208988800UL;
+    // subtract seventy years:
+    unsigned long epoch = secsSince1900 - seventyYears;
+    // print Unix time:
+    Serial.println(epoch);
+
+
+    // print the hour, minute and second:
+    Serial.print("The UTC time is ");       // UTC is the time at Greenwich Meridian (GMT)
+    Serial.print((epoch  % 86400L) / 3600); // print the hour (86400 equals secs per day)
+    Serial.print(':');
+    if ( ((epoch % 3600) / 60) < 10 ) {
+      // In the first 10 minutes of each hour, we'll want a leading '0'
+      Serial.print('0');
+    }
+    Serial.print((epoch  % 3600) / 60); // print the minute (3600 equals secs per minute)
+    Serial.print(':');
+    if ( (epoch % 60) < 10 ) {
+      // In the first 10 seconds of each minute, we'll want a leading '0'
+      Serial.print('0');
+    }
+    Serial.println(epoch % 60); // print the second
+  
+//----------------------------Modifying time for comparison----------------------------//
+  
+  int hour=((epoch  % 86400L) / 3600)+6;
+  int minute=(epoch  % 3600) / 60;
+  int second= epoch % 60;
+
+  String h="";
+  String m="";
+  String s="";
+  
+  if (hour<10)
+  {h=h+'0'+hour;}
+  else
+  {h=h+hour;}
+
+  if (minute<10)
+  {m=m+'0'+minute;}
+  else
+  {m=m+minute;}
+
+  if (second<10)
+  {s=s+'0'+second;}
+  else
+  {s=s+second;}
+
+  Serial.println("hour:");
+  Serial.println(hour);
+  Serial.println("minute:");
+  Serial.println(minute);
+  //Serial.println(second);
+  
+ 
+  //Clock=Clock+h+','+m+','+s;
+  Clock=h+':'+m;
+  
+  /*Clock.toCharArray(Time,58);
+  Serial.print("Time is:");
+  Serial.println(Time);*/
+  delay(5000); 
+  }
+  
+  
+  //--------------------------Time from user end---------------------//
+
+  char Time0[58];
+  t[0].toCharArray(Time0,58);
+  Serial.print("Time0:");
+  Serial.println(Time0);
+  char Time1[58];
+  t[1].toCharArray(Time1,58);
+  Serial.print("Time1:");
+  Serial.println(Time1);
+  char Time2[58];
+  t[2].toCharArray(Time2,58);
+  Serial.print("Time2:");
+  Serial.println(Time2);
+  
+  
+  /*Serial.println(t[0]);
+  delay(500);
+  Serial.println(t[1]);
+  delay(500);
+  Serial.println(t[2]);
+  delay(500);
+*/
+  Serial.print("Time is:");
+  Serial.println(Clock);  
+  
+  //if (Time==Time0 || Time==Time1 || Time==Time2)
+  //if (strcmp(Time,Time0)==0 || strcmp(Time,Time1)==0 || strcmp(Time,Time2)==0)
+  
+  if (Clock == Time0 || Clock == Time1|| Clock == Time2)
+  {
+
+    digitalWrite(Pumppin,HIGH);
+    Serial.println("Pump on");
+    client.publish("mushroom/ack","1");
+
+    digitalWrite(Fanpin,HIGH);
+    Serial.println("Fan on");
+    client.publish("mushroom/ack","2");
+    delay(60000);
+    
+    
+    digitalWrite(Pumppin,LOW);
+    digitalWrite(Fanpin,LOW);
+    
+
+    client.publish("mushroom/ack","Pump off");
+    client.publish("mushroom/ack","Fan off");
+  }
+
+  }
+
+  
+  
+     
+//-----------------------------WiFi-------------------------------------------//
+
+void setup_wifi() {
+    
+    delay(100);
+  // We start by connecting to a WiFi network
+    Serial.print("Connecting to ");
+    Serial.println(ssid);
+    WiFi.begin(ssid, password);
+    while (WiFi.status() != WL_CONNECTED) 
+    {
+      delay(500);
+      Serial.print(".");
+    }
+    randomSeed(micros());
+    Serial.println("");
+    Serial.println("WiFi connected");
+    Serial.println("IP address: ");
+    Serial.println(WiFi.localIP());
+}
+
+//---------------------------While client not conncected---------------------------------//
+
+void reconnect() {
+  // Loop until we're reconnected
+  while (!client.connected()) 
+  {
+    Serial.print("Attempting MQTT connection...");
+    // Create a random client ID
+    String clientId = "ESP32-";
+    clientId += String(random(0xffff), HEX);
+    // Attempt to connect
+    //if your MQTT broker has clientID,username and password
+    //please change following line to    if (client.connect(clientId,userName,passWord))
+    if (client.connect(clientId.c_str()))
+    {
+      Serial.println("connected");
+     //once connected to MQTT broker, subscribe command if any
+
+     //----------------------Subscribing to required topics-----------------------//
+
+     
+      client.subscribe("mushroom/user_input");
+      Serial.println("Subsribed to topic: mushroom/user_input");
+      
+      client.subscribe("mushroom/time");
+      Serial.println("Subsribed to topic: mushroom/time");
+      
+      client.subscribe("mushroom/temp");
+      Serial.println("Subsribed to topic: mushroom/temp");
+      
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      // Wait 6 seconds before retrying
+      delay(5000);
+    }
+  }
+} //end reconnect()
+
+
+
+//-----------------------Callback function-------------------------------------//
+
+
+void callback(char* topic, byte* payload, unsigned int length) {
+ 
+  Serial.print("Message arrived in topic: ");
+  Serial.println(topic);
+  
+//------------------------user_input for manual load control-----------------//
+
+
+  if(strcmp(topic, "mushroom/user_input") == 0){
+  Serial.print("Message:");
+  for (int i = 0; i < length; i++) {
+    Serial.print((char)payload[i]);
+    char data=payload[i];
+    
+  
+    if (data=='0')
+    {
+      digitalWrite(ACpin,LOW);
+      Serial.print("AC OFF");
+      
+      }
+      if (data=='1')
+    {
+      digitalWrite(ACpin,HIGH);
+      Serial.print("AC ON");
+      
+      }
+      if (data=='2')
+    {
+      digitalWrite(Pumppin,HIGH);
+      Serial.print("Pump ON");
+      
+      }
+      if (data=='3')
+    {
+      digitalWrite(Pumppin,LOW);
+      Serial.print("Pump OFF");
+      
+      }
+      if (data=='4')
+    {
+      digitalWrite(Fanpin,LOW);
+      Serial.print("Fan OFF");
+      
+      }
+      if (data=='5')
+    {
+      digitalWrite(Fanpin,HIGH);
+      Serial.print("Fan ON");
+      
+      }
+       
+  }}
+
+  
+  Serial.println();
+  Serial.println("-----------------------");
+ 
+
+//------------------------------Getting time from user end-------------------------//
+
+
+if(strcmp(topic, "mushroom/time") == 0){
+  Serial.print("Message:");
+  for (int i = 0; i < length; i++) {
+   //Serial.print((char)payload[i]);
+    //input=input+payload[i];
+    Data[i]=payload[i];
+    }
+      Serial.print("Data:");
+      Serial.println(Data);
+      input=input+Data;
+      Serial.print("input:");
+      Serial.print(input);
+      // Loop through each character and check if it's a comma
+      Serial.print("input length:");
+      Serial.println(input.length());
+       for (int i = 0; i < input.length(); i++){  
+        
+        if (input.substring(i, i+1) == ",") {
+          // Grab the piece from the last index up to the current position and store it
+          t[counter] = input.substring(lastIndex, i);
+          Serial.println(t[counter]);
+          // Update the last position and add 1, so it starts from the next character
+          lastIndex = i + 1;
+          // Increase the position in the array that we store into
+          counter++;
+        }
+
+        // If we're at the end of the string (no more commas to stop us)
+        Serial.print("last string strat at: ");
+        Serial.println(i);
+        if (i == input.length()-1) {
+          // Grab the last part of the string from the lastIndex to the end
+          t[counter] = input.substring(lastIndex, i+1);
+          Serial.println(t[counter]);
+        }}
+         
+      // Clear out string and counters to get ready for the next incoming string
+      input = "";
+      counter = 0;
+      lastIndex = 0;
+    
+
+      
+      }
+
+
+//-----------------------------Getting temperature threshold from user--------------------------------//
+
+
+      if(strcmp(topic, "mushroom/temp") == 0)
+      {
+
+        Serial.print("Message:");
+        for (int i = 0; i < length; i++) {
+        Data2[i]=payload[i];
+    }
+    
+    input2="";
+    input2=input2+Data2;
+    //Serial.print("Temperature threshold from user end:");
+    //Serial.println(Data2);
+    }
+
+}// end of callback()
+
+
+//---------------------Reading sensor data-------------------------------------//
+
+
+int temp()
+{
+  
+  int t = dht.readTemperature();         
+  /* Serial.print("temperature = ");
+  Serial.print(t); 
+  Serial.println("C  ");*/
+  delay(500);
+  return t;
+   
+  }
+
+int hum()
+{
+  int h = dht.readHumidity();
+  delay(500);
+  /*Serial.print("Current humidity = ");
+  Serial.print(h);
+  Serial.print("%  ");*/
+  return h;
+  
+  }
+
+int co2(){
+
+int co2now[10];//long array for co2 readings
+int co2raw=0;  //long for raw value of co2
+int co2comp = 0;   //long for compensated co2 
+int co2ppm = 0;    //long for calculated ppm
+int sum=0;
+//Serial.printlnln(analogRead(anInput));
+for (int x=0;x<10;x++){
+
+co2now[x]=analogRead(co2_sensor);
+delay(200);
+sum=sum+co2now[x];
+}
+co2raw=sum/10;
+co2ppm=map(co2raw,0,4095,400,5000);
+//Serial.println(co2ppm); 
+//delay(500);
+return co2ppm; 
+  
+}
+
+
+int light(){
+  
+  int l = analogRead(light_sensor);
+  int light_intensity=map(l,0,4095,80,400);
+  return light_intensity;
+}
+
+
+// --------------------send an NTP request to the time server at the given address-------------------------//
+
+
+unsigned long sendNTPpacket(IPAddress& address)
+{
+  Serial.println("sending NTP packet...");
+  // set all bytes in the buffer to 0
+  memset(packetBuffer, 0, NTP_PACKET_SIZE);
+  // Initialize values needed to form NTP request
+  // (see URL above for details on the packets)
+  packetBuffer[0] = 0b11100011;   // LI, Version, Mode
+  packetBuffer[1] = 0;     // Stratum, or type of clock
+  packetBuffer[2] = 6;     // Polling Interval
+  packetBuffer[3] = 0xEC;  // Peer Clock Precision
+  // 8 bytes of zero for Root Delay & Root Dispersion
+  packetBuffer[12]  = 49;
+  packetBuffer[13]  = 0x4E;
+  packetBuffer[14]  = 49;
+  packetBuffer[15]  = 52;
+
+  // all NTP fields have been given values, now
+  // you can send a packet requesting a timestamp:
+  udp.beginPacket(address, 123); //NTP requests are to port 123
+  udp.write(packetBuffer, NTP_PACKET_SIZE);
+  udp.endPacket();
+}
