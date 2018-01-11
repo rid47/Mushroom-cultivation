@@ -1,0 +1,40 @@
+//link for compatible library: https://github.com/bertmelis/Ticker-esp32
+
+#include<ESP32Ticker.h>
+
+Ticker secondTick;
+
+//int watchdogCount=0;
+volatile int watchdogCount=0;
+void ISRwatchdog(){
+
+
+  watchdogCount++;
+  if(watchdogCount==5){
+
+
+    Serial.println();
+    Serial.print("The watch dog bites......");
+    ESP.restart();
+  }
+}
+
+void setup() {
+ 
+  Serial.begin(115200);
+  secondTick.attach(1,ISRwatchdog);
+  
+  // put your setup code here, to run once:
+
+}
+
+void loop() {
+
+  Serial.print("Watch dog counter:");
+  watchdogCount=0;
+  Serial.println(watchdogCount);
+  delay(1000);
+  
+  // put your main code here, to run repeatedly:
+
+}
