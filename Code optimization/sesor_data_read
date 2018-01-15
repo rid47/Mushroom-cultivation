@@ -1,1 +1,97 @@
+#include "DHT.h"
+#define DHTTYPE DHT11
+
+#define light_sensor 34
+#define dht_dpin 26
+#define co2_sensor 35 
+
+
+DHT dht(dht_dpin, DHTTYPE); 
+
+
+int data1=0;
+int data2=0;
+int data3=0;
+int data4=0;
+long lastMsg = 0;
+
+void setup()
+{ 
+
+  Serial.begin(115200);
+  pinMode(light_sensor,INPUT);
+  pinMode(dht_dpin,INPUT);
+  pinMode(co2_sensor,INPUT);
+
+
+  dht.begin();
+}
+
+
+void loop(){
+
+  
+  data1=temp();
+  data2=hum();
+  data3=co2();
+  data4=light();
+  
+  long now=millis();
+  if(now-lastMsg>10000){
+    
+    lastMsg=now;
+    if(data1<50){
+
+    String msg=""; 
+    msg= msg+ data2+","+data1+","+data3+","+data4;
+    char message[68];
+    msg.toCharArray(message,68);
+   //Serial.println(msg);
+   Serial.println(message);
+  }
+
+  
+}
+}
+
+int temp()
+{
+  
+  int t = dht.readTemperature();         
+  return t;
+   
+  }
+
+int hum()
+{
+  int h = dht.readHumidity();
+  return h;
+  
+  }
+
+int co2(){
+
+int co2now[10];//long array for co2 readings
+int co2raw=0;  //long for raw value of co2
+int co2comp = 0;   //long for compensated co2 
+int co2ppm = 0;    //long for calculated ppm
+int sum=0;
+for (int x=0;x<10;x++){
+
+co2now[x]=analogRead(co2_sensor);
+sum=sum+co2now[x];
+}
+co2raw=sum/10;
+co2ppm=map(co2raw,0,4095,400,5000);
+return co2ppm; 
+  
+}
+
+
+int light(){
+  
+  int l = analogRead(light_sensor);
+  int light_intensity=map(l,0,4095,80,400);
+  return light_intensity;
+}
 
