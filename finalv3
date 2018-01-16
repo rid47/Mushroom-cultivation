@@ -292,7 +292,7 @@ if(msg2>input2)
   /*Clock.toCharArray(Time,58);
   Serial.print("Time is:");
   Serial.println(Time);*/
-  delay(5000); 
+  delay(5000); // use millis every 15 secs
   }
   
   
@@ -335,7 +335,7 @@ if(msg2>input2)
     digitalWrite(Fanpin,HIGH);
     Serial.println("Fan on");
     client.publish("mushroom/ack","2");
-    delay(60000);
+    delay(60000);//use millis here 
     
     
     digitalWrite(Pumppin,LOW);
