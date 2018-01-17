@@ -1,0 +1,67 @@
+/*Node MCU DEVLOPMENT BOARD---------------------------------DS3231 RTC MODULE
+ 
+                       D1----------------------------------SCL
+                       D2----------------------------------SDA
+                       3V3--------------------------------VCC
+                       GND--------------------------------GND
+
+*/
+
+//----------------------------including required libraries----------------------------//
+
+
+#include <Wire.h>       //I2C library
+#include <RtcDS3231.h>  //RTC library
+
+//RtcDS3231 rtcObject;              //Uncomment for version 1.0.1 of the rtc library
+RtcDS3231<TwoWire> rtcObject(Wire); //Uncomment for version 2.0.0 of the rtc library
+
+
+
+//----------------------------Required variables-------------------------------------//
+
+
+String hour;
+String minute;
+String Clock;
+
+
+
+//-----------------------------Set up------------------------------------------------//
+
+void setup() {
+ 
+  Serial.begin(115200);  //Starts serial connection
+  rtcObject.Begin();     //Starts I2C
+ 
+  RtcDateTime currentTime = RtcDateTime(18, 01, 17, 11, 56, 0); //define date and time object
+  rtcObject.SetDateTime(currentTime); //configure the RTC with object
+ 
+}
+
+//------------------------------Main Loop--------------------------------------------//
+
+
+void loop() {
+ 
+  actual_time();
+  Serial.print("Current time:");
+  Serial.println(Clock);
+  delay(20000);
+ 
+}
+
+
+//-----------------------------Actual Time----------------------------------------//
+
+
+void actual_time(){
+
+RtcDateTime currentTime = rtcObject.GetDateTime();//get the time from the RTC
+
+  hour=currentTime.Hour();
+  minute=currentTime.Minute();
+  Clock=hour+':'+minute;
+
+}
+
