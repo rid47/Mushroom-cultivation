@@ -27,6 +27,9 @@ int data_publishing_interval=10000;
 String Clock="";
 String h="";
 String m="";
+int hour_length;
+int minute_length;
+
 //----------------User given time spliting variables---------------------------//
 
 
@@ -118,6 +121,7 @@ void setup()
     Serial.println("Couldn't find RTC");
     while (1);
   }
+  //----------------- SET CURRENT TIME HERE---------------------//
   
   rtc.adjust(DateTime(2018, 1, 18, 02, 31, 0));
   
@@ -211,13 +215,23 @@ void loop(){
 
 void actual_time(){
 
-   DateTime now = rtc.now();
-   h=String(now.hour(),DEC);
-   m=String(now.minute(),DEC);
+  DateTime now = rtc.now();
+  h=String(now.hour(),DEC);
    
-   Clock=h+":"+m;
-   Serial.print("Clock:");
-   Serial.println(Clock);
+  hour_length=h.length();
+  if(hour_length==1){
+  h="0"+h;
+  }
+   
+  m=String(now.minute(),DEC);
+  minute_length=m.length();
+  if(minute_length==1){
+  m="0"+m;
+  }  
+  
+  Clock=h+":"+m;
+  Serial.print("Clock:");
+  Serial.println(Clock);
     
 }
 
