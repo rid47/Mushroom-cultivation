@@ -1,0 +1,54 @@
+//----------------------------LIBRARY---------------------------//
+
+#include "RTClib.h"
+RTC_DS3231 rtc;
+
+
+
+//------------------------Defining variables-------------------//
+
+
+String Clock;
+String h;
+String m;
+int hour_length;
+int minute_length;
+
+
+//----------------------------SET UP---------------------------//
+
+void setup() {
+  
+
+  Serial.begin(115200);
+  rtc.begin();
+}
+
+
+//--------------------------MAIN LOOP-----------------------------//
+
+void loop() {
+  
+  DateTime now=rtc.now();
+  
+  h=String(now.hour(),DEC);
+  hour_length=h.length();
+  if(hour_length==1){
+  h="0"+h;
+  }
+  
+  m=String(now.minute(),DEC);
+  minute_length=m.length();
+  if(minute_length==1){
+  m="0"+m;
+  }  
+  
+  
+  Clock=h+":"+m;
+
+  
+  Serial.print("Clock:");
+  Serial.println(Clock);
+  delay(1000);
+
+}
