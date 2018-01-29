@@ -189,7 +189,7 @@ void loop(){
 //--------------------------------USER TIME & ACTUAL TIME COMPARISON--------------------------//
 
  if (Clock!=""){
- if (Clock == Time0 || Clock == Time1|| Clock == Time2 || Clock == Time3 || Clock == Time4)
+ if (Clock == Time0 || Clock == Time1|| Clock == Time2 )//|| Clock == Time3 || Clock == Time4)
   {
 
     digitalWrite(Pumppin,HIGH);
@@ -484,6 +484,14 @@ void time_from_user_end(){
 
   //--------------------------Time from user end---------------------//
 
+  
+ Time0[8]='\0';
+ Time1[8]='\0';
+ Time2[8]='\0';
+ Time3[8]='\0';
+ Time4[8]='\0';
+  
+  
   
   t[0].toCharArray(Time0,8);
   Serial.print("Time0:");
