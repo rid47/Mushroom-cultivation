@@ -504,7 +504,9 @@ if(strcmp(topic, "mushroom/time") == 0){
       Serial.println(input.length());
        for (int i = 0; i < input.length(); i++){  
         
-        if (input.substring(i, i+1) == ",") {
+        if (input.substring(i, i+1) == ",") //input.substring: This method extracts the characters in a string 
+                                            //between "start" and "end", not including "end" itself
+        {
           // Grab the piece from the last index up to the current position and store it
           t[counter] = input.substring(lastIndex, i);
           Serial.println(t[counter]);
