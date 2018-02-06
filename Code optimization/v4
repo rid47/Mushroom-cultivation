@@ -406,8 +406,8 @@ if(strcmp(topic, "mushroom/chk-status") == 0){
       Serial.println(Status1);
       Serial.print("Fan Status:");
       Serial.println(Status2);
-      client.publish("mushroom/fan-status",Status1);
-      client.publish("mushroom/pump-status",Status2);
+      client.publish("mushroom/fan-status",Status2);
+      client.publish("mushroom/pump-status",Status1);
       }
   }}
 
