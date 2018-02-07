@@ -542,10 +542,10 @@ if(strcmp(topic, "mushroom/reset") == 0){
   Serial.print("Message:");
   for (int i = 0; i < length; i++) {
     Serial.print((char)payload[i]);
-    char data=payload[i];
+    char data3=payload[i];
     
   
-    if (data=='1')
+    if (data3=='1')
     {
       
       Serial.println("Resetting NodeMCU.........");
@@ -556,10 +556,10 @@ if(strcmp(topic, "mushroom/reset") == 0){
     
 }
   
+//--------------------------Time from user end---------------------//
+
 
 void time_from_user_end(){
-
-  //--------------------------Time from user end---------------------//
 
   
  memset(Time0,0,sizeof(Time0));
