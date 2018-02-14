@@ -279,7 +279,7 @@ co2now[x]=analogRead(co2_sensor);
 sum=sum+co2now[x];
 }
 co2raw=sum/10;
-co2ppm=map(co2raw,0,4095,400,5000);
+co2ppm=map(co2raw,0,4095,400,2000);
 return co2ppm; 
   
 }
