@@ -56,6 +56,9 @@ char Data2[6];
 String msg2;
 //--------------------------------WiFi and MQTT credentials-----------------------------------------------//
 
+//mushroom center wifi credentials:
+//ssid: Mashroom Centar
+//pass: mdiculturehouse
 
 const char* ssid = "DataSoft_WiFi";
 const char* password = "support123";
