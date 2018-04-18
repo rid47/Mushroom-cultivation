@@ -1,0 +1,57 @@
+#include "WiFi.h"
+#include <time.h>
+
+const char* ssid = "DataSoft_WiFi";
+const char* password = "support123";
+int timezone = 6;
+
+String Clock="";
+String h="";
+String m="";
+int hour_length;
+int minute_length;
+
+void setup() {
+  Serial.begin(115200);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  Serial.println("\nConnecting to WiFi");
+  while (WiFi.status() != WL_CONNECTED) {
+  Serial.print(".");
+  delay(1000);
+  }
+  configTime(timezone * 3600, 0, "bd.pool.ntp.org", "bsti1.time.gov.bd");
+  Serial.println("\nWaiting for time");
+  while (!time(nullptr)) {
+  Serial.print(".");
+  delay(1000);
+  }
+  Serial.println("");
+}
+
+void loop() {
+    
+  time_t now;
+  struct tm * timeinfo;
+  time(&now);
+  timeinfo = localtime(&now);
+  h= timeinfo->tm_hour;
+  m= timeinfo->tm_min;
+  
+  hour_length=h.length();
+  minute_length=m.length();
+  if(hour_length==1){
+  h="0"+h;
+  }
+  if(minute_length==1){
+    m="0"+m;
+ }
+  
+  
+
+  Clock=h+":"+m;
+  Serial.print("Current Time:");
+  Serial.println(Clock);
+  delay(1000);
+ 
+}
