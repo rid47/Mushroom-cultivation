@@ -1,0 +1,53 @@
+#include "BluetoothSerial.h"
+BluetoothSerial SerialBT;
+char ReceivedData[100];
+char ssidArray[24];
+char* OTA_WiFi_SSID;
+int i=0;
+
+//-------------------------SET UP---------------------------------//
+
+void setup() {
+
+Serial.begin(115200);
+if(!SerialBT.begin("Mushroom Device")){
+Serial.println("An error occured while initializing Bluetooth");
+}
+}
+
+
+//-----------------------MAIN LOOP--------------------------------//
+
+void loop() {
+
+ReadBlueToothData;
+OTA_WiFi_SSID=ReceivedData;
+Serial.print("OTA_WiFi_SSID:");
+Serial.println(OTA_WiFi_SSID);
+}
+
+
+ReadBlueToothData()
+{
+while(SerialBT.available()>0){
+ReceivedData[i]=SerialBT.read();
+i++;
+if(ReceivedData[i]=="*")
+{
+  Serial.println("Star of ssid");
+  
+}
+
+if(ReceivedData[1]=="#")
+{
+Serial.println("End of ssid");
+
+}
+
+
+}
+delay(50);
+return ReceivedData;
+}
+}
+
