@@ -1,53 +1,75 @@
 #include "BluetoothSerial.h"
 BluetoothSerial SerialBT;
-char ReceivedData[100];
-char ssidArray[24];
-char* OTA_WiFi_SSID;
-int i=0;
-
-//-------------------------SET UP---------------------------------//
-
+char receivedData[100],uid[100],did[100];
+int i=0,j=0;
+String topic;
 void setup() {
-
-Serial.begin(115200);
-if(!SerialBT.begin("Mushroom Device")){
-Serial.println("An error occured while initializing Bluetooth");
+  Serial.begin(115200);
+ 
+  if(!SerialBT.begin("Mush")){
+  Serial.println("An error occurred initializing Bluetooth");
+  }
 }
-}
-
-
-//-----------------------MAIN LOOP--------------------------------//
-
+ 
 void loop() {
+ 
+    while(SerialBT.available()){
 
-ReadBlueToothData;
-OTA_WiFi_SSID=ReceivedData;
-Serial.print("OTA_WiFi_SSID:");
-Serial.println(OTA_WiFi_SSID);
-}
+    receivedData[i]=SerialBT.read();
+    i++;
+    
+    
+    Serial.print("number of received data:");
+    Serial.println(i);
+    Serial.println(receivedData[i-1]);
+    //if(receivedData[i-1]=='*' && receivedData[i]=='#' && receivedData[i+1]=='$'){
+    if(receivedData[i-1]=='*'){
+    Serial.println("A asterisk is received");
+    //char 
+    uid[i-2];
+    {
+    for(j=0;j<i-1;++j){
+    uid[j]=receivedData[j];
+    
+    }
+    Serial.print("userid:");
+    Serial.println(uid);
+    i=0;
+    j=0;
+    }}
 
+    //if(receivedData[i-1]=='$' && receivedData[i]=='#' && receivedData[i+1]=='*'){
+    if(receivedData[i-1]=='#'){
+    Serial.println("A hash is received");
+    //char 
+    did[i-2];
+    {
+    for(j=0;j<i-1;++j){
+    did[j]=receivedData[j];
+    
+    }
+    Serial.print("deviceid:");
+    Serial.println(did);
+    i=0;
+    j=0;
+    }}
 
-ReadBlueToothData()
-{
-while(SerialBT.available()>0){
-ReceivedData[i]=SerialBT.read();
-i++;
-if(ReceivedData[i]=="*")
-{
-  Serial.println("Star of ssid");
-  
-}
+    
+    delay(50);
+    
+    //---------------Construting the Topic-----------------------------//
 
-if(ReceivedData[1]=="#")
-{
-Serial.println("End of ssid");
-
-}
-
-
-}
-delay(50);
-return ReceivedData;
-}
+    topic="";
+    topic="mushroom/";
+    topic+=uid;
+    topic+="/";
+    topic+=did;
+    topic+="/sensor_data";
+    Serial.print("topic:");
+    Serial.println(topic);
+    }
+    //topic+="mushroom/"+uid+"/"+did+"/"+"sensor_data";
+    
+    
 }
 
