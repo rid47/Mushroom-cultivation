@@ -1,0 +1,96 @@
+#include "BluetoothSerial.h" // Adding BluetoothSerial Library
+BluetoothSerial SerialBT;
+
+
+char receivedData[100];// A container to receive 100 chars data via Bluetooth at a time
+char uid[100];
+char did[100]; // Containers to store user id and device id (max range 999)
+
+int i=0,j=0,k=0; // counters to receive and store data (i=receive bluetooth data,j= store ssid and password, k= store did & uid
+
+int startIndex1=0,endIndex1=0; // To capture ssid and password packet (comma separated)
+
+int startIndex2=0,endIndex2=0; // To capture did and uid packet (comma separated)
+
+int ssidIndex=0,passwordIndex=0; // To separate ssid and password from #ssid,password~ packet
+
+int didIndex=0,uidIndex=0;      // To separate did and uid from $did,uid! packet 
+
+String topic;
+
+//--------------MAIN SETUP------------------------//
+
+
+void setup() {
+  
+  Serial.begin(115200);
+ 
+  if(!SerialBT.begin("Mush")) // Device name = "Mush" in Bluetooth mode
+  {
+  Serial.println("An error occurred initializing Bluetooth");
+  }
+}
+
+
+//----------------------------------------------------MAIN LOOP-----------------------------------------//
+
+void loop() {
+ 
+    while(SerialBT.available()){
+
+    
+    receivedData[i]=SerialBT.read();
+
+
+    // Capturing #ssid,password~ index
+    if(receivedData[i]=='#')startIndex1=i;
+    if(receivedData[i]=='~')endIndex1=i;
+
+    // Capturing $did,uid! index
+    
+    if(receivedData[i]=='$')startIndex2=i;
+    if(receivedData[i]=='!')endIndex2=i;
+    
+    
+    // Storing ssid and password in a char array 
+    
+    for(j=startIndex1+1;j<endIndex1;++j)
+    {
+      
+      Serial.print("Received Packet:");
+      Serial.println(receivedData[j]);
+
+    if(receivedData[j]==',')
+    {
+    ssidIndex=j;
+    Serial.print("SSID index:");
+    Serial.println(ssidIndex);
+    //passwordIndex=i+1;
+    }  
+    }
+
+    // Storing did and uid in a char array
+    
+    for(k=startIndex2+1;k<endIndex2;++k){
+
+
+      Serial.print("Received Packet:");
+      Serial.println(receivedData[k]);
+
+    if(receivedData[k]==',')
+    {
+    uidIndex=k;
+    Serial.print("UID index:");
+    Serial.println(uidIndex);
+    }  
+    }
+    
+    
+    i++;
+    if(i==99)i=0;
+    
+    
+    Serial.print("number of received data:");
+    Serial.println(i);
+    
+}}
