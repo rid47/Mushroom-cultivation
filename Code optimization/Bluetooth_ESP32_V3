@@ -1,0 +1,112 @@
+#include "BluetoothSerial.h"
+BluetoothSerial SerialBT;
+char receivedData[100],validData[100],uid[100],did[100];
+int i=0,j=0,k=0,startIndex=0,endIndex=0;
+
+int commaIndex[2];
+
+String topic;
+String Data;
+void setup() {
+  Serial.begin(115200);
+ 
+  if(!SerialBT.begin("Mush")){
+  Serial.println("An error occurred initializing Bluetooth");
+  }
+}
+ 
+void loop() {
+ 
+    while(SerialBT.available()){
+
+    receivedData[i]=SerialBT.read();
+    Serial.println(receivedData[i]);
+    
+    
+    if(receivedData[i]=='*'){
+    Serial.println("A asterisk is received");
+    startIndex=i+1;
+    Serial.print("startIndex:");
+    Serial.println(startIndex);
+    }
+
+    if(receivedData[i]=='#'){
+
+
+      Serial.println("A hash is received");
+      endIndex=i;
+      Serial.print("endIndex:");
+      Serial.println(endIndex);
+      
+    }
+
+    if(startIndex!=0 && endIndex!=0){
+    Serial.print("Valid Characters:");
+    for (j=startIndex;j<endIndex;j++){
+
+
+      validData[k]=receivedData[j];
+      
+      Serial.print(validData[k]);
+
+      k++;
+
+//      if(receivedData[j]==',')
+//      {
+//        
+//        commaIndex[k]=j;
+//        k++;
+//        
+//        
+//      }      
+      
+      }
+      
+    Serial.println();
+    startIndex=0;
+    endIndex=0;
+    i=-1;
+    k=0;
+//    for (k=0;k<=2;k++){
+//
+//      Serial.print("Comma is received @ index:");
+//      Serial.print(commaIndex[k]);
+//    
+    }
+    //k=0;
+   // }
+    
+    
+    
+    
+//   if(startIndex==0 && endIndex!=0){endIndex=0;i=0;}
+//   if(startIndex!=0 && endIndex==0){startIndex=0;i=0;}
+ 
+    
+    delay(50);
+    
+    //---------------Construting the Topic-----------------------------//
+
+//    topic="";
+//    topic="mushroom/";
+//    topic+=uid;
+//    topic+="/";
+//    topic+=did;
+//    topic+="/sensor_data";
+//    Serial.print("topic:");
+//    Serial.println(topic);
+
+
+    if(i==-1){
+
+     Data=validData;
+     Serial.print("Data:");
+     Serial.println(Data);
+      
+    }
+    i++;
+    }
+    //topic+="mushroom/"+uid+"/"+did+"/"+"sensor_data";
+    
+    
+}
