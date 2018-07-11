@@ -1,0 +1,182 @@
+#include "BluetoothSerial.h"
+//#include "WiFi.h"
+BluetoothSerial SerialBT;
+char receivedData[50];
+int i=0,startIndex=0,endIndex=0;
+
+//int commaIndex[2];
+int counter = 0;
+int lastIndex = 0;
+String Data,commonTopic;
+char ssid[25],password[20];
+String d[4]={""};
+const char* OTA_WiFi_SSID;
+const char* OTA_WiFi_Password;
+
+void setup() {
+  Serial.begin(115200);
+ 
+  if(!SerialBT.begin("Mush")){
+  Serial.println("An error occurred initializing Bluetooth");
+  }
+}
+ 
+void loop() {
+ 
+    while(SerialBT.available()){
+
+    receivedData[i]=SerialBT.read();
+    Serial.println(receivedData[i]);
+    
+    
+    if(receivedData[i]=='*'){
+    Serial.println("A asterisk is received");
+    startIndex=i+1;
+    Serial.print("startIndex:");
+    Serial.println(startIndex);
+    }
+
+    if(receivedData[i]=='#'){
+
+
+      Serial.println("A hash is received");
+      endIndex=i;
+      Serial.print("endIndex:");
+      Serial.println(endIndex);
+      
+    }
+
+    if(startIndex!=0 && endIndex!=0){
+    int j=0,k=0;
+    Serial.print("Valid Characters:");
+    for (j=startIndex;j<endIndex;j++){
+
+
+      receivedData[k]=receivedData[j];
+      
+      Serial.print(receivedData[k]);
+
+      k++;
+      }
+      
+    Serial.println();
+    startIndex=0;
+    endIndex=0;
+    i=-1;
+    j=0;
+    k=0;
+    }
+ 
+    
+    delay(50);
+    
+    
+    if(i==-1){
+
+     Data=receivedData;
+     Serial.print("Data:");
+     Serial.println(Data);
+     Serial.print("Data length:");
+     Serial.println(Data.length());
+     //Serial.print("valid length:");
+     //Serial.println(validData.length());
+
+    for (int l= 0; l < Data.length(); l++){  
+        
+        if (Data.substring(l, l+1) == ",") //input.substring: This method extracts the characters in a string 
+                                            //between "start" and "end", not including "end" itself
+        {
+          // Grab the piece from the last index up to the current position and store it
+          d[counter] = Data.substring(lastIndex, l);
+          Serial.println(d[counter]);
+          // Update the last position and add 1, so it starts from the next character
+          lastIndex = l + 1;
+          // Increase the position in the array that we store into
+          counter++;
+        }
+
+        // If we're at the end of the string (no more commas to stop us)
+        Serial.print("last string start at: ");
+        Serial.println(l);
+        if (l == Data.length()-1) {
+          // Grab the last part of the string from the lastIndex to the end
+          d[counter] = Data.substring(lastIndex+1, l);
+          Serial.println(d[counter]);
+        }}
+         
+      // Clear out string and counters to get ready for the next incoming string
+      Data = "";
+      counter = 0;
+      lastIndex = 0;
+
+
+
+      //---------------Construting the Topic-----------------------------//
+
+//    topic1="";
+//    topic="mushroom/";
+//    topic+=uid;
+//    topic+="/";
+//    topic+=did;
+//    topic+="/sensor_data";
+//    Serial.print("topic:");
+//    Serial.println(topic);
+
+
+
+     //-----------------Storing ssid and password-------------------------/
+      d[0].toCharArray(ssid,25);
+      d[1].toCharArray(password,20);
+      OTA_WiFi_SSID = ssid;     // "Mashroom Centar";
+      OTA_WiFi_Password = password; // "mdiculturehouse"
+      Serial.print("SSID:");
+      Serial.println(ssid);
+      Serial.print("Password:");
+      Serial.println(password);
+      Serial.print("Device Id:");
+      Serial.println(d[2]);
+      Serial.print("User Id:");
+      Serial.println(d[3]);
+
+      commonTopic="";
+      commonTopic="mushroom/"+d[2] + "/"+d[3]+"/";
+      Serial.print("commonTopic:");
+      Serial.println(commonTopic);
+      
+      
+      //Stopping bluetooth communication  
+      //btStop();
+      //setup_wifi();
+
+      
+      }
+    i++;
+    }
+    //topic+="mushroom/"+uid+"/"+did+"/"+"sensor_data";
+    }
+
+
+
+
+//void setup_wifi() {
+//    
+//    delay(100);
+//  // We start by connecting to a WiFi network
+//    Serial.print("Connecting to ");
+//    Serial.println(OTA_WiFi_SSID);
+//    WiFi.begin(OTA_WiFi_SSID, OTA_WiFi_Password);
+//    while (WiFi.status() != WL_CONNECTED) 
+//    {
+//      delay(500);
+//      Serial.print(".");
+//    }
+//    randomSeed(micros());
+//    Serial.println("");
+//    Serial.println("WiFi connected");
+//    Serial.println("IP address: ");
+//    Serial.println(WiFi.localIP());
+//    // closing Bluetooth connection
+//
+//   // btStop();
+//    
+//}
