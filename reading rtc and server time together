@@ -1,0 +1,138 @@
+#include <WiFi.h>
+#include <time.h>
+#include "RTClib.h"
+RTC_DS3231 rtc;
+
+//-----------------------Real time clock (from server)-----------------------------------//
+
+String Clock="";
+String h="";
+String m="";
+int hour_length;
+int minute_length;
+int timezone = 6; //Timezone for Dhaka UTC+6
+
+
+//----------------------Real time clock (from module)-------------------------------------//
+
+
+String Clock2="";
+String h2="";
+String m2="";
+int hour_length2;
+int minute_length2;
+
+//------------------------WiFi Credentials------------------------------------------------//
+
+char* ssid="DataSoft_WiFi";
+char* password="support123";
+
+void setup() {
+  // put your setup code here, to run once:
+
+  Serial.begin(115200);
+  setup_wifi();
+  
+  configTime(timezone * 3600, 0, "bd.pool.ntp.org", "bsti1.time.gov.bd");
+
+
+  if (! rtc.begin()) {
+    Serial.println("Couldn't find RTC");
+    while (1);
+  
+}
+
+//rtc.adjust(DateTime(2018, 7, 17, 16, 32, 00));
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+   delay(1000);
+   actual_time_server();
+   delay(1000);
+   actual_time_rtc();
+ 
+
+}
+
+
+//------------------------WiFi Setup-------------------------------------//
+
+void setup_wifi() {
+    
+    delay(100);
+  // We start by connecting to a WiFi network
+    Serial.print("Connecting to ");
+    Serial.println(ssid);
+    WiFi.begin(ssid, password);
+    while (WiFi.status() != WL_CONNECTED) 
+    {
+      delay(500);
+      Serial.print(".");
+    }
+    randomSeed(micros());
+    Serial.println("");
+    Serial.println("WiFi connected");
+    Serial.println("IP address: ");
+    Serial.println(WiFi.localIP());
+}
+
+
+
+//--------------------------Actual time---------------------------------------------------------//
+
+void actual_time_server(){
+
+  time_t now;
+  struct tm * timeinfo;
+  time(&now);
+  timeinfo = localtime(&now);
+  
+  h= timeinfo->tm_hour;
+  m= timeinfo->tm_min;
+  
+  hour_length=h.length();
+  minute_length=m.length();
+  if(hour_length==1){
+  h="0"+h;
+  }
+  if(minute_length==1){
+  m="0"+m;
+ }
+  
+  
+
+  Clock=h+":"+m;
+  Serial.print("Current Time:");
+  Serial.println(Clock);
+ 
+}
+
+void actual_time_rtc(){
+
+
+  DateTime now=rtc.now();
+  
+  h2=String(now.hour(),DEC);
+  
+  hour_length2=h2.length();
+  if(hour_length2==1){
+  h2="0"+h2;
+  }
+  
+  m2=String(now.minute(),DEC);
+  minute_length2=m2.length();
+  if(minute_length2==1){
+  m2="0"+m2;
+  }  
+  
+  
+  Clock2=h2+":"+m2;
+
+  
+  Serial.print("Clock2:");
+  Serial.println(Clock2);
+  delay(1000);
+  
+ }
+
