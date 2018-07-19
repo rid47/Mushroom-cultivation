@@ -1,0 +1,50 @@
+#define redrgbPin 15
+#define greenrgbPin 2
+#define bluergbPin 5
+
+// the setup routine runs once when you press reset:
+void setup()
+{
+// initialize the digital pin as an output.
+pinMode(redrgbPin, OUTPUT);
+pinMode(greenrgbPin, OUTPUT);
+pinMode(bluergbPin, OUTPUT);
+digitalWrite(redrgbPin,LOW);
+digitalWrite(greenrgbPin,LOW);
+digitalWrite(bluergbPin,LOW);
+
+
+}
+void loop(){
+
+
+power_on_LED();
+delay(2000);
+wifi_connected_LED();
+delay(2000);
+configured_device_LED();
+delay(2000);
+}
+
+void power_on_LED(){
+//RED LED
+digitalWrite(redrgbPin,HIGH);
+digitalWrite(greenrgbPin,LOW);
+digitalWrite(bluergbPin,LOW);
+}
+
+void wifi_connected_LED(){
+//BLUE LED
+digitalWrite(redrgbPin,LOW);
+digitalWrite(greenrgbPin,LOW);
+digitalWrite(bluergbPin,HIGH);
+}
+
+void configured_device_LED(){
+
+//GREEN LED
+digitalWrite(redrgbPin,LOW);
+digitalWrite(greenrgbPin,HIGH);
+digitalWrite(bluergbPin,LOW);
+  
+}
