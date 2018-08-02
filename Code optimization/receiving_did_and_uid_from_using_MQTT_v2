@@ -3,7 +3,10 @@
 #define EEPROM_SIZE 200
 #include "EEPROM.h"
 
-int addr = 0;
+int configDataReadAddress=0;
+int configDataWriteAddress=0;
+
+
 char* ssid="DataSoft_WiFi";
 char* password="support123";
 const char* mqtt_server = "182.163.112.207";
@@ -62,10 +65,9 @@ int counter = 0;
 
 // Keep track of the last comma so we know where to start the substring
 int lastIndex;
-int address;
+
 char did[24]={'0'};
 char uid[24]={'0'};
-
 
 
 //---------------Main Set up-----------------------------------------------------------//
@@ -76,8 +78,7 @@ void setup() {
 
 
   Serial.begin(115200);
-
-
+  
   Serial.println("\nInitializing EEPROM library\n");
   if (!EEPROM.begin(EEPROM_SIZE)) 
   {
@@ -88,7 +89,6 @@ void setup() {
   }
 
   //-----------Clearing EEPROM; uncomment the following loop if u want to clear EEPROM-------------------------//
-
 
 //    for (int i = 0 ; i < EEPROM_SIZE ; i++) {
 //    EEPROM.write(i, 0);
@@ -157,29 +157,25 @@ void reconnect() {
      //----------------------Subscribing to required topics-----------------------//
 
      
-//
-//            char checkEEPROM=char(EEPROM.read(0));
-//            Serial.print("checkEEPROM size:");
-//            Serial.println(sizeof(checkEEPROM));
-//            if (sizeof(checkEEPROM) == 0)
-//            {
 
-                  client.subscribe("mushroom/configData");
-                  Serial.println("Subsribed to topic: mushroom/configData");
-                  readfromEEPROM();
 
+                  
+                 readConfigDatafromEEPROM();
+
+                  if(strlen(did)==0 && strlen(uid)==0)client.subscribe("mushroom/configData");
+                  
                   if(strlen(did)!=0 && strlen(uid)!=0){
 
                     client.unsubscribe("mushroom/configData");
                     
                    
-                    Serial.println("You alread have did and uid assigned");
+                    Serial.println("You already have did and uid assigned");
                     Serial.println("Unsubscribed from: mushroom/configData");
                     Serial.print("did:");
                     Serial.println(did);
                     Serial.print("uid:");
                     Serial.println(uid);
-                    //String did_slash_uid=did+"/"+uid;
+                    
 
 //----------------------------------Constructing topics here----------------------------------------------------//
                       
@@ -216,7 +212,6 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived in topic: ");
   Serial.println(topic);
   
-//-----------------------Publishing hardware status upon request-------------//
 
 
 if(strcmp(topic, "mushroom/configData") == 0){
@@ -278,7 +273,7 @@ if(strcmp(topic, "mushroom/configData") == 0){
       counter = 0;
       lastIndex = 0;
       // Writing did and uid to EEPROM
-      writetoEEPROM();
+      writeConfigDataToEEPROM();
           
             
       }
@@ -289,31 +284,29 @@ if(strcmp(topic, "mushroom/configData") == 0){
 
  //------------------ Writing did and uid to EEPROM-----------------------------------------//
 
-void writetoEEPROM(){
+void writeConfigDataToEEPROM()
+{
 
-address=0x00;
-EEPROM.writeString(address,configData[0]);
+EEPROM.writeString(configDataWriteAddress,configData[0]);
 Serial.print("Size of configData[0]:");
 Serial.println(configData[0].length());
 
 // Updating address for configData[1]
             
-address=0x0A;
-EEPROM.writeString(address,configData[1]);
+configDataWriteAddress+=10;
+EEPROM.writeString(configDataWriteAddress,configData[1]);
 Serial.println(configData[1].length());
 
 EEPROM.commit();
 
-//readfromEEPROM();
-//Unsubscribing once did and uid written
+ESP.restart();
 
-client.unsubscribe("mushroom/configData");
 }            
 
 // ----------------Reading did and uid from EEPROM-----------------------------//
 
 
-void readfromEEPROM()
+void readConfigDatafromEEPROM()
 {
 
   memset(did,0,sizeof(did));
@@ -323,10 +316,9 @@ void readfromEEPROM()
   for(int i=0;i<10;++i){
 
 
-    did[i]=char(EEPROM.read(0x00+i));
-    
-    
-  }
+    did[i]=char(EEPROM.read(configDataReadAddress));
+    configDataReadAddress++;
+}
 
   Serial.print("did:");
   Serial.println(did);
@@ -334,7 +326,8 @@ void readfromEEPROM()
   for(int j=0;j<10;++j){
 
        
-      uid[j]=char(EEPROM.read(0x0A+j));
+      uid[j]=char(EEPROM.read(configDataReadAddress));
+      configDataReadAddress++;
     
   }
 
@@ -411,8 +404,5 @@ strcat(topic12,commonTopic12);
 Serial.print("topic12:");
 Serial.println(topic12);
 
-  
-  }
-     
-            
- 
+//ESP.restart();
+} 
