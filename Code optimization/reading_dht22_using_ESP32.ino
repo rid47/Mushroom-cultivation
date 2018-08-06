@@ -1,17 +1,19 @@
 #include "DHTesp.h" //library: https://github.com/beegee-tokyo/DHTesp
- 
+#define dht_dpin 26
+#define DHTTYPE DHT22
+
 DHTesp dht;
  
 void setup()
 {
   Serial.begin(115200);
  
-  dht.setup(26,DHTesp::DHT22);
+  dht.setup(dht_dpin,DHTesp::DHTTYPE);
 }
  
 void loop()
 {
-  float temperature = dht.getTemperature();
+  int  temperature = dht.getTemperature();
  
   Serial.print("Temperature: ");
   Serial.println(temperature);
@@ -19,6 +21,6 @@ void loop()
   int humidity=dht.getHumidity();
   Serial.print("Humidity:");
   Serial.println(humidity);
-  delay(10000);
+  delay(1000);
  
 }
